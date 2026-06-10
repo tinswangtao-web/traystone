@@ -4,30 +4,132 @@
 
 "use strict";
 
-const LOG_PREFIX = "traystone",
-  LOG_LOADING = "加载中",
-  LOG_CLEANUP = "清理中",
-  LOG_SHOWING_WINDOWS = "显示窗口",
-  LOG_HIDING_WINDOWS = "隐藏窗口",
-  LOG_WINDOW_CLOSE = "拦截窗口关闭",
-  LOG_TRAY_ICON = "创建托盘图标",
-  LOG_REGISTER_HOTKEY = "注册快捷键",
-  LOG_UNREGISTER_HOTKEY = "注销快捷键",
-  ACTION_QUICK_NOTE = "快速笔记",
-  ACTION_SHOW = "显示仓库",
-  ACTION_HIDE = "隐藏仓库",
-  ACTION_RELAUNCH = "重启 Obsidian",
-  ACTION_CLOSE = "关闭仓库",
+const locales = {
+  en: {
+    LOG_PREFIX: "traystone",
+    LOG_LOADING: "Loading",
+    LOG_CLEANUP: "Cleaning up",
+    LOG_SHOWING_WINDOWS: "Showing windows",
+    LOG_HIDING_WINDOWS: "Hiding windows",
+    LOG_WINDOW_CLOSE: "Intercepting window close",
+    LOG_TRAY_ICON: "Creating tray icon",
+    LOG_REGISTER_HOTKEY: "Registering hotkeys",
+    LOG_UNREGISTER_HOTKEY: "Unregistering hotkeys",
+    ACTION_QUICK_NOTE: "Quick Note",
+    ACTION_SHOW: "Show Vault",
+    ACTION_HIDE: "Hide Vault",
+    ACTION_RELAUNCH: "Relaunch Obsidian",
+    ACTION_CLOSE: "Close Vault",
+    OPT_GROUP_WINDOW: "Window Management",
+    DESC_LAUNCH_ON_STARTUP: "Automatically open Obsidian when you log in to your computer.",
+    DESC_HIDE_ON_LAUNCH: "Automatically minimize Obsidian on launch. If 'Run in background' is enabled, the window hides to the system tray/menu bar instead of the taskbar/Dock.",
+    DESC_RUN_IN_BACKGROUND: "Hide the app to the background instead of quitting when clicking the close button or using the toggle focus hotkey.",
+    DESC_HIDE_TASKBAR_ICON: "Hide the window icon from the Dock/Taskbar. Recommended to enable the tray icon first. May not work on Linux.",
+    DESC_CREATE_TRAY_ICON: "Add an icon to the system tray/menu bar. Click to restore focus, right-click to force quit or relaunch.",
+    DESC_TRAY_ICON_IMAGE: "Set the image used for the tray/menu bar icon. Recommended size: 16x16<br>Preview: <img data-preview style='height: 16px; vertical-align: bottom;'>",
+    DESC_TRAY_ICON_TOOLTIP: "Set the tooltip text for the tray/menu bar icon. <code>{{vault}}</code> will be replaced with the vault name.<br>Preview: <b class='u-pop' data-preview></b>",
+    DESC_ACCELERATOR_FORMAT: "This hotkey is registered globally. Format: <a href='https://www.electronjs.org/docs/latest/api/accelerator' target='_blank' rel='noopener'>Electron accelerator</a>",
+    OPT_GROUP_QUICK_NOTE: "Quick Note",
+    DESC_QUICK_NOTE_LOCATION: "New quick notes will be placed in this folder.",
+    PLACEHOLDER_QUICK_NOTE_LOCATION: "Example: notes/quick",
+    DESC_QUICK_NOTE_DATE_FORMAT: "New quick notes will use this pattern for the filename. ${MOMENT_FORMAT}<br>Preview: <b class='u-pop' data-preview></b>",
+    LBL_LAUNCH_ON_STARTUP: "Launch on startup",
+    LBL_HIDE_ON_LAUNCH: "Hide on launch",
+    LBL_RUN_IN_BACKGROUND: "Run in background",
+    LBL_HIDE_TASKBAR_ICON: "Hide taskbar icon",
+    LBL_CREATE_TRAY_ICON: "Create tray icon",
+    LBL_TRAY_ICON_IMAGE: "Tray icon image",
+    LBL_TRAY_ICON_TOOLTIP: "Tray icon tooltip",
+    LBL_TOGGLE_WINDOW_FOCUS_HOTKEY: "Toggle window focus hotkey",
+    LBL_QUICK_NOTE_LOCATION: "Quick note location",
+    LBL_QUICK_NOTE_DATE_FORMAT: "Quick note date format",
+    LBL_QUICK_NOTE_HOTKEY: "Quick note hotkey",
+    EXAMPLE_PREFIX: "Example: ",
+    MOBILE_INFO_TITLE: "This is a desktop-only plugin",
+    MOBILE_INFO_DESC: "Please use the desktop version for full functionality."
+  },
+  zh: {
+    LOG_PREFIX: "traystone",
+    LOG_LOADING: "加载中",
+    LOG_CLEANUP: "清理中",
+    LOG_SHOWING_WINDOWS: "显示窗口",
+    LOG_HIDING_WINDOWS: "隐藏窗口",
+    LOG_WINDOW_CLOSE: "拦截窗口关闭",
+    LOG_TRAY_ICON: "创建托盘图标",
+    LOG_REGISTER_HOTKEY: "注册快捷键",
+    LOG_UNREGISTER_HOTKEY: "注销快捷键",
+    ACTION_QUICK_NOTE: "快速笔记",
+    ACTION_SHOW: "显示仓库",
+    ACTION_HIDE: "隐藏仓库",
+    ACTION_RELAUNCH: "重启 Obsidian",
+    ACTION_CLOSE: "关闭仓库",
+    OPT_GROUP_WINDOW: "窗口管理",
+    DESC_LAUNCH_ON_STARTUP: "每次登录电脑时自动打开 Obsidian。",
+    DESC_HIDE_ON_LAUNCH: "启动 Obsidian 时自动最小化。如果启用了“后台运行”选项，窗口将隐藏到系统托盘/菜单栏，而不是最小化到任务栏/程序坞。",
+    DESC_RUN_IN_BACKGROUND: "点击窗口关闭按钮或使用切换聚焦快捷键时，将应用隐藏到后台继续运行，而不是退出。",
+    DESC_HIDE_TASKBAR_ICON: "从程序坞/任务栏隐藏窗口图标。建议先启用托盘图标再使用此选项。在 Linux 系统上可能无效。",
+    DESC_CREATE_TRAY_ICON: "在系统托盘/菜单栏添加图标，点击可将隐藏的 Obsidian 窗口恢复聚焦，右键菜单可强制完全退出或重启应用。",
+    DESC_TRAY_ICON_IMAGE: "设置托盘/菜单栏图标使用的图片。推荐尺寸：16x16<br>预览：<img data-preview style='height: 16px; vertical-align: bottom;'>",
+    DESC_TRAY_ICON_TOOLTIP: "设置托盘/菜单栏图标的提示文字。<code>{{vault}}</code> 占位符将被替换为仓库名称。<br>预览：<b class='u-pop' data-preview></b>",
+    DESC_ACCELERATOR_FORMAT: "此快捷键全局注册，即使 Obsidian 没有键盘焦点也能触发。格式说明：<a href='https://www.electronjs.org/docs/latest/api/accelerator' target='_blank' rel='noopener'>Electron accelerator</a>",
+    OPT_GROUP_QUICK_NOTE: "快速笔记",
+    DESC_QUICK_NOTE_LOCATION: "新建快速笔记将放置在此文件夹中。",
+    PLACEHOLDER_QUICK_NOTE_LOCATION: "示例：notes/quick",
+    DESC_QUICK_NOTE_DATE_FORMAT: "新建快速笔记将使用此模式的文件名。${MOMENT_FORMAT}<br>预览：<b class='u-pop' data-preview></b>",
+    LBL_LAUNCH_ON_STARTUP: "开机自动启动",
+    LBL_HIDE_ON_LAUNCH: "启动时隐藏",
+    LBL_RUN_IN_BACKGROUND: "后台运行",
+    LBL_HIDE_TASKBAR_ICON: "隐藏任务栏图标",
+    LBL_CREATE_TRAY_ICON: "创建托盘图标",
+    LBL_TRAY_ICON_IMAGE: "托盘图标图片",
+    LBL_TRAY_ICON_TOOLTIP: "托盘图标提示",
+    LBL_TOGGLE_WINDOW_FOCUS_HOTKEY: "切换窗口聚焦快捷键",
+    LBL_QUICK_NOTE_LOCATION: "快速笔记位置",
+    LBL_QUICK_NOTE_DATE_FORMAT: "快速笔记日期格式",
+    LBL_QUICK_NOTE_HOTKEY: "快速笔记快捷键",
+    EXAMPLE_PREFIX: "示例：",
+    MOBILE_INFO_TITLE: "这是一个桌面端插件",
+    MOBILE_INFO_DESC: "请在桌面端使用此插件的全部功能。"
+  }
+};
+
+const getLang = () => {
+  const lang = window.localStorage.getItem("language");
+  if (locales[lang]) return lang;
+  if (lang && lang.startsWith("zh")) return "zh";
+  return "en";
+};
+
+const currentLang = getLang();
+
+const t = (key) => {
+  return locales[currentLang][key] || locales["en"][key] || key;
+};
+
+const LOG_PREFIX = t("LOG_PREFIX"),
+  LOG_LOADING = t("LOG_LOADING"),
+  LOG_CLEANUP = t("LOG_CLEANUP"),
+  LOG_SHOWING_WINDOWS = t("LOG_SHOWING_WINDOWS"),
+  LOG_HIDING_WINDOWS = t("LOG_HIDING_WINDOWS"),
+  LOG_WINDOW_CLOSE = t("LOG_WINDOW_CLOSE"),
+  LOG_TRAY_ICON = t("LOG_TRAY_ICON"),
+  LOG_REGISTER_HOTKEY = t("LOG_REGISTER_HOTKEY"),
+  LOG_UNREGISTER_HOTKEY = t("LOG_UNREGISTER_HOTKEY"),
+  ACTION_QUICK_NOTE = t("ACTION_QUICK_NOTE"),
+  ACTION_SHOW = t("ACTION_SHOW"),
+  ACTION_HIDE = t("ACTION_HIDE"),
+  ACTION_RELAUNCH = t("ACTION_RELAUNCH"),
+  ACTION_CLOSE = t("ACTION_CLOSE"),
   DEFAULT_DATE_FORMAT = "YYYY-MM-DD",
   ACCELERATOR_FORMAT = `
-    此快捷键全局注册，即使 Obsidian 没有键盘焦点也能触发。格式说明：
+    This hotkey is registered globally. Format:
     <a href="https://www.electronjs.org/docs/latest/api/accelerator" target="_blank" rel="noopener">
     Electron accelerator</a>
   `,
   MOMENT_FORMAT = `
-    格式说明：
-    <a href="https://momentjs.com/docs/#/displaying/format/" target="_blank" rel="noopener">
-    Moment.js 格式字符串</a>
+    Format:
+    <a href="https://momentjs.com/docs/` + String.fromCharCode(35) + `/displaying/format/" target="_blank" rel="noopener">
+    Moment.js format string</a>
   `,
   OBSIDIAN_BASE64_ICON = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHZSURBVDhPlZKxTxRBFMa/XZcF7nIG7mjxjoRCwomJxgsFdhaASqzQxFDzB1AQKgstLGxIiBQGJBpiCCGx8h+wgYaGgAWNd0dyHofeEYVwt/PmOTMZV9aDIL/s5pvZvPfN9yaL/+HR3eXcypta0m4juFbP5GHuXc9IbunDFc9db/G81/ZzhDMN7g8td47mll4R5BfHwZN4LOaA+fHa259PbUmIYzWkt3e2NZNo3/V9v1vvU6kkstk+tLW3ItUVr/m+c3N8MlkwxYqmBFcbwUQQCNOcyVzDwEAWjuPi5DhAMV/tKOYPX5hCyz8Gz1zX5SmWjBvZfmTSaRBJkGAIoxJHv+pVW2yIGNxOJ8bUVNcFEWLxuG1ia6JercTbttwQTeDwPS0kCMXiXtgk/jQrFUw7ptYSMWApF40yo/ytjHq98fdk3ayVE+cn2CxMb6ruz9qAJKFUKoWza1VJSi/n0+ffgYHdWW2gHuxXymg0gjCB0sjpmiaDnkL3RzDyzLqBUKns2ztQqUR0fk2TwSrGSf1eczqF5vsPZRCQSSAFLk6gqctgQRkc6TWRQLV2YMYQki9OoNkqzFQ9r+WOGuW5CrJbOzyAlPKr6MSGLbkcDwbf35oY/jRkt6cAfgNwowruAMz9AgAAAABJRU5ErkJggg==`,
   log = (message) => console.log(`${LOG_PREFIX}: ${message}`);
@@ -304,28 +406,23 @@ const registerHotkeys = () => {
   };
 
 const OPTIONS = [
-  "窗口管理",
+  t("OPT_GROUP_WINDOW"),
   {
     key: "launchOnStartup",
-    desc: "每次登录电脑时自动打开 Obsidian。",
+    desc: t("DESC_LAUNCH_ON_STARTUP"),
     type: "toggle",
     default: false,
     onChange: setLaunchOnStartup,
   },
   {
     key: "hideOnLaunch",
-    desc: `
-      启动 Obsidian 时自动最小化。如果启用了"后台运行"选项，
-      窗口将隐藏到系统托盘/菜单栏，而不是最小化到任务栏/程序坞。
-    `,
+    desc: t("DESC_HIDE_ON_LAUNCH"),
     type: "toggle",
     default: false,
   },
   {
     key: "runInBackground",
-    desc: `
-      点击窗口关闭按钮或使用切换聚焦快捷键时，将应用隐藏到后台继续运行，而不是退出。
-    `,
+    desc: t("DESC_RUN_IN_BACKGROUND"),
     type: "toggle",
     default: false,
     onChange() {
@@ -348,9 +445,7 @@ const OPTIONS = [
   },
   {
     key: "hideTaskbarIcon",
-    desc: `
-      从程序坞/任务栏隐藏窗口图标。建议先启用托盘图标再使用此选项。在 Linux 系统上可能无效。
-    `,
+    desc: t("DESC_HIDE_TASKBAR_ICON"),
     type: "toggle",
     default: false,
     onChange() {
@@ -360,30 +455,21 @@ const OPTIONS = [
   },
   {
     key: "createTrayIcon",
-    desc: `
-      在系统托盘/菜单栏添加图标，点击可将隐藏的 Obsidian 窗口恢复聚焦，
-      右键菜单可强制完全退出或重启应用。
-    `,
+    desc: t("DESC_CREATE_TRAY_ICON"),
     type: "toggle",
     default: true,
     onChange: createTrayIcon,
   },
   {
     key: "trayIconImage",
-    desc: `
-      设置托盘/菜单栏图标使用的图片。推荐尺寸：16x16
-      <br>预览：<img data-preview style="height: 16px; vertical-align: bottom;">
-    `,
+    desc: t("DESC_TRAY_ICON_IMAGE"),
     type: "image",
     default: OBSIDIAN_BASE64_ICON,
     onChange: createTrayIcon,
   },
   {
     key: "trayIconTooltip",
-    desc: `
-      设置托盘/菜单栏图标的提示文字。<code>{{vault}}</code> 占位符将被替换为仓库名称。
-      <br>预览：<b class="u-pop" data-preview></b>
-    `,
+    desc: t("DESC_TRAY_ICON_TOOLTIP"),
     type: "text",
     default: "{{vault}} | Obsidian",
     postprocessor: replaceVaultName,
@@ -391,31 +477,28 @@ const OPTIONS = [
   },
   {
     key: "toggleWindowFocusHotkey",
-    desc: ACCELERATOR_FORMAT,
+    desc: t("DESC_ACCELERATOR_FORMAT"),
     type: "hotkey",
     default: "CmdOrCtrl+Shift+Tab",
     onBeforeChange: unregisterHotkeys,
     onChange: registerHotkeys,
   },
-  "快速笔记",
+  t("OPT_GROUP_QUICK_NOTE"),
   {
     key: "quickNoteLocation",
-    desc: "新建快速笔记将放置在此文件夹中。",
+    desc: t("DESC_QUICK_NOTE_LOCATION"),
     type: "text",
-    placeholder: "示例：notes/quick",
+    placeholder: t("PLACEHOLDER_QUICK_NOTE_LOCATION"),
   },
   {
     key: "quickNoteDateFormat",
-    desc: `
-      新建快速笔记将使用此模式的文件名。${MOMENT_FORMAT}
-      <br>预览：<b class="u-pop" data-preview></b>
-    `,
+    desc: t("DESC_QUICK_NOTE_DATE_FORMAT").replace("${MOMENT_FORMAT}", MOMENT_FORMAT),
     type: "moment",
     default: DEFAULT_DATE_FORMAT,
   },
   {
     key: "quickNoteHotkey",
-    desc: ACCELERATOR_FORMAT,
+    desc: t("DESC_ACCELERATOR_FORMAT"),
     type: "hotkey",
     default: "CmdOrCtrl+Shift+Q",
     onBeforeChange: unregisterHotkeys,
@@ -425,17 +508,17 @@ const OPTIONS = [
 
 const keyToLabel = (key) => {
     const labels = {
-      launchOnStartup: "开机自动启动",
-      hideOnLaunch: "启动时隐藏",
-      runInBackground: "后台运行",
-      hideTaskbarIcon: "隐藏任务栏图标",
-      createTrayIcon: "创建托盘图标",
-      trayIconImage: "托盘图标图片",
-      trayIconTooltip: "托盘图标提示",
-      toggleWindowFocusHotkey: "切换窗口聚焦快捷键",
-      quickNoteLocation: "快速笔记位置",
-      quickNoteDateFormat: "快速笔记日期格式",
-      quickNoteHotkey: "快速笔记快捷键",
+      launchOnStartup: t("LBL_LAUNCH_ON_STARTUP"),
+      hideOnLaunch: t("LBL_HIDE_ON_LAUNCH"),
+      runInBackground: t("LBL_RUN_IN_BACKGROUND"),
+      hideTaskbarIcon: t("LBL_HIDE_TASKBAR_ICON"),
+      createTrayIcon: t("LBL_CREATE_TRAY_ICON"),
+      trayIconImage: t("LBL_TRAY_ICON_IMAGE"),
+      trayIconTooltip: t("LBL_TRAY_ICON_TOOLTIP"),
+      toggleWindowFocusHotkey: t("LBL_TOGGLE_WINDOW_FOCUS_HOTKEY"),
+      quickNoteLocation: t("LBL_QUICK_NOTE_LOCATION"),
+      quickNoteDateFormat: t("LBL_QUICK_NOTE_DATE_FORMAT"),
+      quickNoteHotkey: t("LBL_QUICK_NOTE_HOTKEY"),
     };
     return labels[key] ?? key;
   },
@@ -452,7 +535,7 @@ class SettingsTab extends obsidian.PluginSettingTab {
         setting.setName(opt);
         setting.setHeading();
       } else {
-        if (opt.default) opt.placeholder ??= `示例：${opt.default}`;
+        if (opt.default) opt.placeholder ??= t("EXAMPLE_PREFIX") + opt.default;
         setting.setName(keyToLabel(opt.key));
         setting.setDesc(htmlToFragment(opt.desc));
         const onChange = async (value) => {
@@ -517,7 +600,9 @@ class SettingsTab extends obsidian.PluginSettingTab {
 class MobileInfoTab extends obsidian.PluginSettingTab {
   display() {
     this.containerEl.empty();
-    new obsidian.Setting(this.containerEl).setName("这是一个桌面端插件").setDesc("请在桌面端使用此插件的全部功能。");
+    new obsidian.Setting(this.containerEl)
+        .setName(t("MOBILE_INFO_TITLE"))
+        .setDesc(t("MOBILE_INFO_DESC"));
   }
 }
 
